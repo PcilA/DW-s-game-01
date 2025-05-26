@@ -1,12 +1,41 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\GitHub\\DW-s-game-01\\Test1\\",
-  "Documents": [],
+  "WorkspaceRootPath": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\\u3141\u3134\u3147\u3141\u3134\u3147\\Test1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{1095E53F-7F02-0617-B751-54D5BB06C4F4}|Assembly-CSharp.csproj|c:\\users\\kimdo\\onedrive\\\uBB38\uC11C\\\u3141\u3134\u3147\u3141\u3134\u3147\\test1\\assets\\playermovecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1095E53F-7F02-0617-B751-54D5BB06C4F4}|Assembly-CSharp.csproj|solutionrelative:assets\\playermovecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PlayerMoveController.cs",
+              "DocumentMoniker": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\\u3141\u3134\u3147\u3141\u3134\u3147\\Test1\\Assets\\PlayerMoveController.cs",
+              "RelativeDocumentMoniker": "Assets\\PlayerMoveController.cs",
+              "ToolTip": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\\u3141\u3134\u3147\u3141\u3134\u3147\\Test1\\Assets\\PlayerMoveController.cs",
+              "RelativeToolTip": "Assets\\PlayerMoveController.cs",
+              "ViewState": "AgIAAMkAAAAAAAAAAAAAwNoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-26T15:29:49.268Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
