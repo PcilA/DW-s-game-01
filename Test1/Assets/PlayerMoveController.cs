@@ -3,79 +3,82 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 3인칭 플레이어 컨트롤러
-/// ─ Shift : 입력 방향으로 짧게 초고속 돌진(dash) → 키를 떼기 전까지 이동 속도 버프
-/// ─ 돌진 중 Trail 파티클, 돌진 타임만큼 무적 상태 플래그 지원
+/// • Shift : 입력 방향으로 일정 거리/시간 동안 **직선 돌진**
+///   └ 돌진 중 ⇒ ① 중력 off ② drag 0 ③ 방향 전환 & 가속 무시
+///   └ 돌진 종료 ⇒ 버프 속도 유지 (dashBoostActive) + 쿨타임 시작
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMoveController : MonoBehaviour
 {
-    /* ───────── Inspector ─────────────────────────────────── */
+    /* ─── Inspector ───────────────────────────────────── */
     [Header("References")]
-    [SerializeField] private Transform cam;          // 비워 두면 Camera.main
-    [SerializeField] private TrailRenderer dashTrail;   // ↖ TrailRenderer 참고
-    [SerializeField] private Text dashText;     // “대쉬” UI (optional)
+    [SerializeField] private Transform cam;
+    [SerializeField] private TrailRenderer dashTrail;
+    [SerializeField] private Text dashText;
 
     [Header("Gravity / Physics")]
-    public float extraGravityMultiplier = 2f;   // 낙하 가속
-    public float airDrag = 0.05f; // 공중 마찰
+    public float extraGravityMultiplier = 2f;
+    public float airDrag = 0.05f;
 
     [Header("Ground Drag")]
     public float groundMovingDrag = 0.25f;
     public float groundStopDrag = 5f;
 
     [Header("Movement")]
-    public float moveAcceleration = 10f;  // 지속 가속
-    public float burstAcceleration = 6f;   // 첫 프레임 VelocityChange
+    public float moveAcceleration = 10f;
+    public float burstAcceleration = 6f;
     public float maxMoveSpeed = 8f;
     public float turnSmoothTime = 0.1f;
-    [Range(0f, 1f)] public float turnResponsiveness = 0.8f;
+    [Range(0, 1)] public float turnResponsiveness = 0.8f;
 
     [Header("Jump")]
     public float jumpImpulse = 3f;
 
     [Header("Dash (Shift)")]
-    public float dashInitialSpeed = 25f;   // 돌진 시작 속도
-    public float dashDuration = 0.15f; // 돌진 유지 시간(초)
-    public float dashSpeedMultiplier = 1.5f;  // 이후 이동 버프 배수
+    public float dashInitialSpeed = 25f;   // 돌진 속도
+    public float dashDuration = 0.15f; // 유지 시간
+    public float dashSpeedMultiplier = 1.5f;  // 이후 버프
+    public float dashCooldown = 1.0f;  // 🔄 재사용 간격
 
-    /* ───────── Runtime ─────────────────────────────────── */
+    /* ─── Runtime ─────────────────────────────────────── */
     Rigidbody rb;
     bool isGrounded;
-    bool dashBoostActive;     // 버프 지속
-    bool isDashing;           // 돌진 중
+    bool isDashing;
+    bool dashBoostActive;
     float dashTimer;
+    float nextDashTime;              // Time.time 기준
+    Vector3 dashDir;                   // 잠긴 방향
     float turnSmoothVelocity;
 
-    /* ================ 초기화 ============================== */
+    /* ========== 초기화 ================================= */
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX |
                          RigidbodyConstraints.FreezeRotationZ;
 
-        if (cam == null && Camera.main != null) cam = Camera.main.transform;
+        if (cam == null && Camera.main) cam = Camera.main.transform;
         if (dashText) dashText.enabled = false;
         if (dashTrail) dashTrail.emitting = false;
 
         rb.drag = groundStopDrag;
     }
 
-    /* ================ UPDATE ============================== */
+    /* ========== UPDATE ================================= */
     void Update()
     {
         HandleJump();
-        HandleDashInput();   // Shift 입력
+        HandleDashInput();        // 새 기능
     }
-
     void FixedUpdate()
     {
         HandleMovement();
         ApplyExtraGravity();
         ClampSpeed();
-        UpdateDashTimer();
+        UpdateDashState();
     }
 
-    /* ───────── Jump ────────────────────────────────────── */
+    /* ─── Jump ────────────────────────────────────────── */
     void HandleJump()
     {
         if (Input.GetButtonDown("Jump") && isGrounded && !isDashing)
@@ -85,118 +88,120 @@ public class PlayerMoveController : MonoBehaviour
         }
     }
 
-    /* ───────── Dash 입력 / 트리거 ───────────────────────── */
+    /* ─── Dash Trigger & Cooldown ─────────────────────── */
     void HandleDashInput()
     {
-        if (isDashing) return;                    // 돌진 중엔 재입력 무시
+        if (isDashing) return;                      // 이미 돌진 중
+        if (Time.time < nextDashTime) return;       // 쿨타임
         if (!Input.GetKeyDown(KeyCode.LeftShift)) return;
-        if (!HasMovementInput()) return;          // 입력 방향 없으면 무시
+        if (!HasMovementInput()) return;
 
-        Vector3 dir = GetMoveDirection();
-        if (dir.sqrMagnitude < 0.01f) return;
+        dashDir = GetMoveDirection();
+        if (dashDir.sqrMagnitude < 0.01f) return;
 
-        // 돌진 시작 ------------------------------
+        // ─ 돌진 시작 ─
         isDashing = true;
-        dashTimer = dashDuration;
         dashBoostActive = true;
+        dashTimer = dashDuration;
+        nextDashTime = Time.time + dashCooldown;
+
+        rb.useGravity = false;                   // 중력 잠금
+        rb.drag = 0f;
+        rb.velocity = dashDir * dashInitialSpeed;
 
         if (dashTrail) dashTrail.emitting = true;
         if (dashText) dashText.enabled = true;
 
-        // (무적 플래그 자리)  ---------------------
-        // isInvincible = true;   // ← 나중에 여기에 변수 선언/해제
-        //----------------------------------------
-
-        rb.drag = 0f;                         // 마찰 제거
-        rb.velocity = dir * dashInitialSpeed;     // 순간 속도
+        // (무적 플래그를 여기에)  isInvincible = true;
     }
 
-    /* ───────── Dash 상태 업데이트 ───────────────────────── */
-    void UpdateDashTimer()
+    /* ─── Dash 진행 & 종료 체크 ───────────────────────── */
+    void UpdateDashState()
     {
         if (!isDashing) return;
 
         dashTimer -= Time.fixedDeltaTime;
+
+        // 돌진 진행: 방향·속도 잠금
+        rb.velocity = dashDir * dashInitialSpeed;
+
         if (dashTimer <= 0f)
         {
+            // ─ 돌진 종료 ─
             isDashing = false;
+            rb.useGravity = true;
+
             if (dashTrail) dashTrail.emitting = false;
             if (dashText) dashText.enabled = false;
 
-            // (무적 해제 자리) -------------------
-            // isInvincible = false;
-            //------------------------------------
-
-            // 땅에 있으면 groundMovingDrag, 공중이면 airDrag 로 자연스럽게 이어짐
+            // (무적 해제 자리) isInvincible = false;
         }
     }
 
-    /* ───────── Movement (일반 가속 + 버프) ─────────────── */
+    /* ─── Movement (지상/공중 일반) ──────────────────── */
     void HandleMovement()
     {
+        if (isDashing) return;       // 돌진 중엔 무시
+
         Vector3 dir = GetMoveDirection();
 
         // 드래그 결정
-        if (isGrounded)
-            rb.drag = dir.sqrMagnitude > 0.01f ? groundMovingDrag : groundStopDrag;
-        else
-            rb.drag = airDrag;
+        rb.drag = isGrounded
+                  ? (dir.sqrMagnitude > 0.01f ? groundMovingDrag : groundStopDrag)
+                  : airDrag;
 
-        // 입력 有
         if (dir.sqrMagnitude > 0.01f)
         {
-            // 몸 회전
+            // 회전
             float tgt = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-            float ang = Mathf.SmoothDampAngle(
-                            transform.eulerAngles.y, tgt,
-                            ref turnSmoothVelocity, turnSmoothTime);
-            transform.rotation = Quaternion.Euler(0f, ang, 0f);
+            float ang = Mathf.SmoothDampAngle(transform.eulerAngles.y, tgt,
+                                              ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = Quaternion.Euler(0, ang, 0);
 
             // 스냅 가속(정지 → 출발)
-            if (IsNearlyZero(rb.velocity) && !isDashing)
+            if (IsNearlyZero(rb.velocity))
                 rb.AddForce(dir * burstAcceleration, ForceMode.VelocityChange);
 
             // 지속 가속
-            if (!isDashing)   // 돌진 중엔 별도 속도 유지
-                rb.AddForce(dir * moveAcceleration, ForceMode.Acceleration);
+            rb.AddForce(dir * moveAcceleration, ForceMode.Acceleration);
 
             // 방향 보정
             Vector3 hv = new Vector3(rb.velocity.x, 0, rb.velocity.z);
             Vector3 want = dir * hv.magnitude;
             rb.AddForce((want - hv) * turnResponsiveness, ForceMode.VelocityChange);
         }
-        else if (!isDashing)   // 입력 無
+        else
         {
-            dashBoostActive = false;              // 버프 해제
+            dashBoostActive = false;         // 입력이 없으면 버프 소멸
         }
     }
 
-    /* ───────── Gravity / Speed Clamp ───────────────────── */
+    /* ─── Gravity & SpeedClamp ───────────────────────── */
     void ApplyExtraGravity()
     {
-        if (!isGrounded && extraGravityMultiplier > 1f)
-            rb.AddForce(Physics.gravity * (extraGravityMultiplier - 1f), ForceMode.Acceleration);
+        if (!isDashing && !isGrounded && extraGravityMultiplier > 1f)
+            rb.AddForce(Physics.gravity * (extraGravityMultiplier - 1f),
+                        ForceMode.Acceleration);
     }
 
     void ClampSpeed()
     {
         float limit = maxMoveSpeed *
-                      (dashBoostActive ? dashSpeedMultiplier : 1f) *
-                      (isDashing ? 999f : 1f);   // 돌진 중엔 제한 없음
+                      (dashBoostActive ? dashSpeedMultiplier : 1f);
 
         Vector3 hv = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-        if (hv.magnitude > limit)
+        if (hv.magnitude > limit && !isDashing)     // 돌진 속도는 제한 X
             rb.velocity = hv.normalized * limit + Vector3.up * rb.velocity.y;
     }
 
-    /* ───────── Ground Check ───────────────────────────── */
+    /* ─── Ground Check ───────────────────────────────── */
     void OnCollisionEnter(Collision col)
     {
         foreach (var c in col.contacts)
             if (Vector3.Angle(c.normal, Vector3.up) < 50f) { isGrounded = true; break; }
     }
 
-    /* ───────── Helpers ───────────────────────────────── */
+    /* ─── Helpers ───────────────────────────────────── */
     bool HasMovementInput() =>
         Mathf.Abs(Input.GetAxisRaw("Horizontal")) > .01f ||
         Mathf.Abs(Input.GetAxisRaw("Vertical")) > .01f;
@@ -205,7 +210,6 @@ public class PlayerMoveController : MonoBehaviour
     {
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
-
         Vector3 f = Vector3.Scale(cam.forward, new Vector3(1, 0, 1)).normalized;
         Vector3 r = Vector3.Scale(cam.right, new Vector3(1, 0, 1)).normalized;
         return (r * h + f * v).normalized;
