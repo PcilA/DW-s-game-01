@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerBall : MonoBehaviour
 {
+    public float gineung = 0.1;
     private int modee;
     public float jumpPower;
     bool isJump;
