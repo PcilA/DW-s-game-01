@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\GitHub\\DW-s-game-01\\Test1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{1095E53F-7F02-0617-B751-54D5BB06C4F4}|Assembly-CSharp.csproj|c:\\users\\kimdo\\onedrive\\\uBB38\uC11C\\github\\dw-s-game-01\\test1\\assets\\playerball.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1095E53F-7F02-0617-B751-54D5BB06C4F4}|Assembly-CSharp.csproj|solutionrelative:assets\\playerball.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PlayerBall.cs",
+              "DocumentMoniker": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\GitHub\\DW-s-game-01\\Test1\\Assets\\PlayerBall.cs",
+              "RelativeDocumentMoniker": "Assets\\PlayerBall.cs",
+              "ToolTip": "C:\\Users\\kimdo\\OneDrive\\\uBB38\uC11C\\GitHub\\DW-s-game-01\\Test1\\Assets\\PlayerBall.cs",
+              "RelativeToolTip": "Assets\\PlayerBall.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-26T11:47:07.789Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
