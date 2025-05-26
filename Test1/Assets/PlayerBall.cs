@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class PlayerBall : MonoBehaviour
 {
-
+    public float jumpPower;
+    bool isJump;
     Rigidbody rigid;
-
+    
     void Awake()
-    {  rigid = GetComponent<Rigidbody>(); }
+    {  
+        rigid = GetComponent<Rigidbody>(); }
 
     private void FixedUpdate()
     {
@@ -17,6 +19,11 @@ public class PlayerBall : MonoBehaviour
         rigid.AddForce(new Vector3(h, 0, v), ForceMode.Impulse);
     }
 
+    private void Update()
+    {
+        if (Input.GetButtonDown("Jump"))
+        { rigid.AddForce(new Vector3(0, jumpPower, 0), ForceMode.Impulse); }
+    }
 
 
 }
